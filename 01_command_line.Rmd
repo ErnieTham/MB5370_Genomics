@@ -1,6 +1,6 @@
 ---
 title: "Workshop 1: Introduction to the Command Line"
-author: "Your Name"
+author: "Ernie Tham"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -26,7 +26,59 @@ Replace the text below each heading with your own notes. Copy each command you r
 
 ## Basic unix commands
 
-Notes on `pwd`, `ls`, `cd` and how unix commands are put together.
+**ls** 
+*Description: displays files and folders*
+```{bash}
+ls
+```
+
+```{text}
+Example output:
+01_command_line.Rmd         command_line            quast
+02_genome_assembly.Rmd      flye_genome             raw_data
+03_metagenome_assembly.Rmd  flye_metagenome         README.md
+assembly_check              mb5370-workshops.Rproj  redbean
+checkm                      metabat                 repeat
+```
+
+Useful common options/flags for ls:
+ls -l   = Displays detailed information, including permissions, file size, and modification date.
+ls -a   = Shows all files, including hidden files (names beginning with .)
+ls -h	  = Displays file sizes in human-readable units when used with -l.
+ls -lh  = Shows detailed information with readable file sizes (e.g., KB, MB).
+ls -r   = Reverses the listing order.
+ls -t   = Sorts files by modification time, newest first.
+ls -S   = Sorts files by size, largest first.
+
+**pwd** 
+*Description: shows the full path of your current working directory.*
+```{bash}
+pwd
+```
+
+```{text}
+Example output:
+/home/jc947409/MB5370_Genomics
+```
+**cd**
+*Description: changes directory location to another folder.*
+```{bash}
+cd data
+```
+
+```{text}
+Original working directory:
+/home/jc947409/MB5370_Genomics
+
+New working directory:
+/home/jc947409/MB5370_Genomics/data
+```
+
+Useful common options/flags for cd:
+cd .. = Move up one folder level.
+cd ~  = Move to your home directory.
+cd /	= Move to the root directory.
+
 
 ## Viewing and searching files
 
