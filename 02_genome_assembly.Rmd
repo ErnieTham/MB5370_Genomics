@@ -1,6 +1,6 @@
 ---
 title: "Workshop 2: Genome Assembly"
-author: "Your Name"
+author: "Ernie Tham"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -19,18 +19,238 @@ Notes for [Workshop 2](https://mb5370.bioinformatics.guide/workshop2.html). Run 
 
 ## Redbean assembly
 
+One of the fastest long read genome assemblers.
+
 Commands run in `redbean/`.
+```{bash}
+cd ~/MB5370_Genomics/redbean
+```
+
+Collecting a small subset of data for the initial assembly. Only the first 3 files will be used.
+```{bash}
+cat /pvol/data/amtp4/*_[012].fastq > amtp4.fastq
+```
+
+Running the assembly
+```{bash}
+wtdbg2 -x ont -g 5m -t 4 -i amtp4.fastq -fo amtp4
+wtpoa-cns -t 4 -i amtp4.ctg.lay.gz -fo amtp4.ctg.fa
+```
+
+Inspecting assembly statistics
+```{bash}
+assembly-stats amtp4.ctg.fa
+```
+
+Running redbean with higher coverage
+```{bash}
+cat /pvol/data/amtp4/*.fastq > amtp4_20x.fastq
+wtdbg2 -x ont -g 5m -t 4 -i amtp4_20x.fastq -fo amtp4_20x
+wtpoa-cns -t 4 -i amtp4_20x.ctg.lay.gz -fo amtp4_20x.ctg.fa
+```
+
+Inspecting higher coverage assembly statistics
+```{bash}
+assembly-stats amtp4_20x.ctg.fa
+```
 
 ## Flye assembly
 
+An older long read genome assemblers. It's not as quick as redbean.
+
 Commands run in `flye_genome/`.
+```{bash}
+pwd #Checking current directory
+cd .. #Move up a directory
+cd flye_genome
+pwd #Confirming change in directory
+```
+
+Running Flye on both datasets
+```{bash}
+#Forming symbolic links to the same raw data used for redbean. Allows shortcut access to a different directory.
+ln -s ../redbean/amtp4.fastq .
+ln -s ../redbean/amtp4_20x.fastq .
+```
+
+Making a shellscript and saving it in the flye_genome folder.
+```{bash}
+#!/bin/bash
+#SBATCH --time=60
+#SBATCH --ntasks=4 --mem=10gb
+
+echo "Starting flye in $(pwd) at $(date)"
+
+flye --nano-raw amtp4.fastq --out-dir amtp4 --genome-size 5m --threads 4
+
+echo "Finished flye in $(pwd) at $(date)"
+```
+
+Using the sbatch command to queue the slurm script so the HPC(High-Performance Computing) cluster to run hardware intensive tasks.
+```{bash}
+sbatch run_flye_small.sh
+#This will say "submitted batch job XXX", where XXX is your slurm file number
+```
+You can check the status of the queue by running 
+```{bash}
+squeue
+#If your file number is missing from the JOBID column, then your file is done.
+```
+
+Additionally, to see the progress of the file being generated you can use the "tail" command.
+```{bash}
+tail -f slurm-XXX.out
+#Displays the last 10 lines of the file and continues to display new lines as they are added to the file.
+```
+
+Outputs will be generated into folders and the final assembly will be called assembly.fasta.
+
+Afterwards, you can check the contiguity and completeness of this assembly using assembly-stats
+```{bash}
+#Checking the smaller data set.
+assembly-stats amtp4/assembly.fasta
+#Checking the larger data set
+assembly-stats amtp4_20x/assembly.fasta
+```
 
 ## Assembly graphs with Bandage
+Using Bandage, which is another app, we can inspect GFA files.
+
+The outputs obtained from the small and large data set show solid colored lines. These continuous segments can be separated into independent graphs whereas others are connected via black lines (such as the top left graph of low coverage assembly).
+
+**Low coverage assembly**
+
+![AMPT4](flye_genome/ampt4_graph.png){width=50%}
+
+
+**High coverage assembly**
+
+![AMPT4_20x](flye_genome/ampt4_20x_graph.png){width=50%}
+
+
+Things to keep in mind:
+
+- Biologically distinct entities will form separate graphs (eg. chromosomes or plasmids)
+
+- Separated graphs can also occur if coverage is very low, leading to no reads and the inability to connect different parts of the genome together.
+
+- Highly joined regions tend to occur because repeats creates ambiguities. Too many possible connections and the assembler has trouble selecting the correct path between them.
+
 
 ## Assembly quality with QUAST
-
 Commands run in `quast/`.
 
-## Mystery repeat region (optional)
+**Checking assembly quality with QUAST.**
+First we need to change working directory to the QUAST folder.
+```{bash}
+pwd
+cd ..
+cd quast
+pwd
+```
 
+Preparing the assembly data
+*Flye Assembly*
+```{bash}
+#We can use this commands to look at contig (continuous pieces of DNA) sizes in the flye assembly. It lists out all the contigs in the flye assembly and lists them from shortest to longest.
+cat ../flye_genome/amtp4_20x/assembly.fasta | bioawk -c fastx '{print $name, length($seq)}' | sort -n -k2
+
+#Column 1 = contig name
+#Column 2 = congig length in base pairs
+```
+Note down the two largest contig numbers as our reference assembly only contains contigs for the two major Vibro chromosomes.
+
+contig_10 = 3378257
+
+contig_58 = 1775300
+
+You can extract them from your assembly using the following command:
+```{bash}
+samtools faidx ../flye_genome/amtp4_20x/assembly.fasta contig_10 contig_58 > flye_asm/vibrio.fasta
+```
+*Redbean Assembly*
+We can repeat the steps above for redbean assembly
+```{bash}
+#Generating contig list
+cat ../redbean/amtp4_20x.ctg.fa | bioawk -c fastx '{print $name, length($seq)}' | sort -n -k2
+```
+ctg1 = 3344006
+
+ctg2 = 1764934
+
+```{bash}
+#Extracting using samtools
+samtools faidx ../redbean/amtp4_20x.ctg.fa ctg1 ctg2 > redbean_asm/vibrio.fasta
+```
+
+Creating a symbolic link to access the original files from another folder.
+```{bash}
+ln -s ../flye_genome/amtp4_20x.fastq .
+```
+
+Creating a symbolic link to the reference assembly.
+```{bash}
+ln -s /pvol/data/amtp4/reference/vibrio .
+```
+
+Run the following quast command:
+```{bash}
+quast -o quast_vibrio redbean_asm/vibrio.fasta flye_asm/vibrio.fasta -L -t 4 --circos --glimmer -r vibrio/vibrio.fna --features  vibrio/vibrio.gff --nanopore amtp4_20x.fastq
+```
+
+Inspect the quast ouput by downloading it onto your laptop and unzipping the file. Look at the "report.html" and "circos/circos.png"
+
+## Mystery repeat region
 Commands run in `repeat/`.
+```{bash}
+#Changing working directory
+pwd
+cd ../repeat
+pwd
+```
+
+Extract the repeat region sequence
+
+1) Go to bandage and open the ampt4 assembly graph
+2) Select the contig node where all the colored segments connect.
+3) Use the output menu on the top bar and select the option to "copy selected path sequence to clipboard".
+4) Open a new text file and add a fasta header '>repeat_1' on line 1.
+5) Paste the path sequence on the second line and save the file into the repeat folder. Name the file "repeat.fasta".
+
+**Use prokka to annotate it**
+```{bash}
+#Run the following sequence
+prokka --outdir prokka --prefix repeat repeat.fasta
+
+#Examine the tsv file produced. What type of genomic features dominate this sequence?
+cat prokka/repeat.tsv
+
+#rRNA dominates this sequence due to the number of genes and total length.
+```
+
+**Investigating the genomic arrangements of repeats**
+Mapping the repeat sequence back to the genome itself using minimap2.
+
+*Linking the data*
+```{bash}
+ln -s ../quast/vibrio/vibrio.fna .
+```
+
+*Running the minimap2*
+```{bash}
+minimap2 -x map-ont vibrio.fna repeat.fasta > repeat_vs_genome.paf
+```
+
+*Examining the output*
+```{bash}
+head  repeat_vs_genome.paf
+#The results look complicated and the first 12 columns are only shown.
+```
+
+*Extracting the important columns*
+```{bash}
+#Since we want to find out if the arrangement of repeats is interspersed or tandem repeats, we need the columns specifying the start and end points on the target.
+cat repeat_vs_genome.paf | grep '^repe' | awk -F '\t' '{print $6,$8,$9}' > repeat_locations.bed
+```
+
+After viewing the '.bed' file produced, we can say that the repeats are interspersed. The repeats occur at different separate locations on the contig rather than being consecutively repeating.

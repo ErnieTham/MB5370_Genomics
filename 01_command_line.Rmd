@@ -42,13 +42,22 @@ checkm                      metabat                 repeat
 ```
 
 Useful common options/flags for ls:
+
 ls -l   = Displays detailed information, including permissions, file size, and modification date.
+
 ls -a   = Shows all files, including hidden files (names beginning with .)
+
 ls -h	  = Displays file sizes in human-readable units when used with -l.
+
 ls -lh  = Shows detailed information with readable file sizes (e.g., KB, MB).
+
 ls -r   = Reverses the listing order.
+
 ls -t   = Sorts files by modification time, newest first.
+
 ls -S   = Sorts files by size, largest first.
+
+ls -l /usr = Runs the unix commands in the /usr directory.
 
 **pwd** 
 *Description: shows the full path of your current working directory.*
@@ -75,15 +84,112 @@ New working directory:
 ```
 
 Useful common options/flags for cd:
+
 cd .. = Move up one folder level.
+
 cd ~  = Move to your home directory.
+
 cd /	= Move to the root directory.
 
 
 ## Viewing and searching files
 
-Notes on `cat`, `head`, `grep` and `man`.
+**cat** 
+*Description: displays the entire file's contents*
+```{bash}
+cat test.fasta
+```
+
+```{text}
+Example output:
+>fasta_header
+MMGTSRCVILLFALLLWAANAAPPEIHTTRPNVPEEIKRPNSTEIETPAVKQLETPSIFLLTTLEVAEADVDSTLETMKDRNKKNSAKLSKIGNNMKSLLSVFSVFGGFLSLLSVVTTTS
+```
+
+**head** 
+*Description: displays the beginning of a file, usually the first 10 lines*
+```{bash}
+head -2 test.fasta
+#-2 will display the first 2 lines only.
+```
+
+```{text}
+Example output:
+>fasta_header
+MMGTSRCVILLFALLLWAANAAPPEIHTTRPNVPEEIKRPNSTEIETPAVKQLETPSIFL
+```
+
+**grep** 
+*Description: Globally search a Regular Expression and Print. TLDR, it searches for a file for lines matching a pattern.*
+```{bash}
+#Finding header lines in a file.
+grep '^>' test.fasta
+```
+
+```{text}
+Example output:
+>fasta_header
+```
+
+```{bash}
+#Finding specific ammino acid sequence.
+grep KDRNKKNSAK test.fasta
+```
+
+```{text}
+Example output:
+LTTLEVAEADVDSTLETM<KDRNKKNSAK>LSKIGNNMKSLLSVFSVFGGFLSLLSVVTTTS
+#The specific sequence is highlighted in red.
+```
+
+```{bash}
+#Finding number line of specific ammino acid sequence.
+grep -n KDRNKKNSAK test.fasta
+```
+
+```{text}
+Example output:
+3:LTTLEVAEADVDSTLETM<KDRNKKNSAK>LSKIGNNMKSLLSVFSVFGGFLSLLSVVTTTS
+#The specific sequence is highlighted in red.
+```
+
+To view more about grep flags
+```{bash}
+man grep
+```
+
+Useful common options/flags for grep:
+
+grep -i  = case insensitive match
+
+grep -n  = report line number of matches
+
+grep -c  = count all files that contain the pattern
+
+grep -w  = match whole words only
+
 
 ## Sequence file formats
 
-Notes on the fasta and fastq formats.
+#**FASTA vs FASTQ**#
+
+**FASTA**
+
+Used for "reference data"
+
+No quality scores, so assumed to be correct
+
+Used for nucleotide and protein data
+
+Begins with ">"
+
+**FASTQ**
+
+Used for "raw" reads from next generation sequencing experiments
+
+Includes quality scores for every base
+
+Begins with "@"
+
+Has 4 lines and the 4th line is the quality score.
+

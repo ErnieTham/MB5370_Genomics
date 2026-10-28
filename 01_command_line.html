@@ -450,13 +450,16 @@ grep -n KDRNKKNSAK test.fasta</code></pre>
 <div id="sequence-file-formats" class="section level2">
 <h2>Sequence file formats</h2>
 <p>#<strong>FASTA vs FASTQ</strong>#</p>
-<p><strong>FASTA</strong> Used for “reference data”</p>
+<p><strong>FASTA</strong></p>
+<p>Used for “reference data”</p>
 <p>No quality scores, so assumed to be correct</p>
 <p>Used for nucleotide and protein data</p>
+<p>Begins with “&gt;”</p>
 <p><strong>FASTQ</strong></p>
 <p>Used for “raw” reads from next generation sequencing experiments</p>
 <p>Includes quality scores for every base</p>
-<p>Notes on the fasta and fastq formats.</p>
+<p>Begins with “@”</p>
+<p>Has 4 lines and the 4th line is the quality score.</p>
 </div>
 
 
